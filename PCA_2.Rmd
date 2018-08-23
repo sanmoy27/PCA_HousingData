@@ -1,0 +1,124 @@
+---
+title: "PCA_2"
+author: "Sanmoy Paul"
+date: "16 April 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**Load Libraries**
+```{r LoadLibraries, echo=TRUE}  
+library(dplyr)
+library(tidyr)
+library(MASS)
+library(caTools)
+library(ISLR)
+library(car)
+library(ggplot2)
+library(plotly)
+library(gridExtra)
+library(FactoMineR)
+``` 
+
+**Read Url**
+```{r readUrl, echo=TRUE}
+readUrl<-url("http://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.data")
+houseData<-read.table(readUrl)
+houseData<-as.data.frame(houseData)
+colnames(houseData) <- c("CRIM", "ZN", "INDUS","CHAS","NOX","RM","AGE","DIS","RAD","TAX","PTRATIO","B","LSTAT","MEDV")
+```   
+
+**Read First 6 recs**
+```{r ReadFirst, echo=TRUE}
+head(houseData)
+```
+**Read Last 6 recs**
+```{r ReadLast, echo=TRUE}
+tail(houseData)
+```
+
+**Structure of the data frame**
+```{r struc, echo=TRUE}
+str(houseData)
+glimpse(houseData)
+```
+
+**No of Cols**
+```{r nCol, echo=TRUE}
+ncol(houseData)
+```
+
+**No of rows**
+```{r nRow, echo=TRUE}
+nrow(houseData)
+```
+
+**Names**
+```{r colNames, echo=TRUE}
+names(houseData)
+colnames(houseData)
+```  
+
+**Detect NAs**
+```{r detectNAs, echo=TRUE}
+detectNAs<-function(x){
+  return(sum(is.na(x)))
+}
+lapply(houseData, detectNAs)
+```  
+
+**Fit PCA**
+```{r pca, echo=TRUE}
+pca <- PCA(houseData[, -14])
+summary(pca)
+```   
+
+**Eigen Values**
+```{r eig, echo=TRUE}
+pca$eig
+```   
+
+**Rotation Matrix**
+```{r rotateMatrix, echo=TRUE}
+pcaModel <- prcomp(houseData)
+pcaModel$rotation
+```  
+
+**PCA Scores**
+```{r pcaScores, echo=TRUE}
+pcaModel$x
+```  
+
+**Plot**
+```{r plotPca, echo=TRUE}
+plot(pcaModel)
+```  
+
+**Fit linear model using the first 3 PCs**
+```{r modelFit, echo=TRUE}
+modHouses <- lm(houseData$MEDV ~ pcaModel$x[, 1:3])
+summary(modHouses)
+```  
+
+**Fit full linear model**
+```{r modelFullFit, echo=TRUE}
+modHousesFull <- lm(MEDV ~ ., data = houseData)
+summary(modHousesFull)
+```  
+
+**Comparision of Observed and Predicted**
+```{r comaprisonPlot, echo=TRUE}
+p1<-ggplot(houseData, aes(x=MEDV, y=predict(modHouses))) + geom_point() + geom_smooth( method="lm", se=FALSE)+
+  labs(title="PCA") +
+  labs(x="Observed MEDV") +
+  labs(y="Predicted MEDV")
+
+p2<-ggplot(houseData, aes(x=MEDV, y=predict(modHousesFull))) + geom_point() + geom_smooth( method="lm", se=FALSE)+
+  labs(title="Full Model") +
+  labs(x="Observed MEDV") +
+  labs(y="Predicted MEDV")
+
+grid.arrange(p1,p2, nrow=1, ncol=2)
+```   
